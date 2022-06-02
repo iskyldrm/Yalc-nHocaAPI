@@ -37,12 +37,17 @@ namespace TestAPI.Controllers
         //}
         [HttpGet]
         [ActionName("1")]
-        public List<CustomerDTO> GetCustomerAll()
+        public List<innerjoinDTO> GetCustomerAll(string customerId, int orderId)
         {
             SqlConnection sqlConnection = new SqlConnection(@"data source=(localdb)\mssqllocaldb;initial catalog=Northwind;integrated security=True");
 
 
-            SqlCommand sqlCommand = new SqlCommand("Select CustomerId,CompanyName,Address from Customers");
+            SqlCommand sqlCommand = new SqlCommand($"Select c.CompanyName, o.OrderID,p.ProductName,od.Quantity,od.UnitPrice," +
+                "SUM(od.Quantity*od.UnitPrice) as toplam from Orders o inner join Customers c on c.CustomerID = o.CustomerID " +
+                "inner join[Order Details] od on od.OrderID = o.OrderID " +
+                "inner join Products p on p.ProductID = od.ProductID " +
+                $"where c.CustomerID = '{customerId}' AND o.OrderID = '{orderId}'" +
+                "group by  c.CompanyName, o.OrderID, p.ProductName, od.Quantity, od.UnitPrice");
             sqlCommand.Connection = sqlConnection;
             sqlCommand.CommandType = CommandType.Text;
             sqlConnection.Open();
@@ -51,16 +56,20 @@ namespace TestAPI.Controllers
 
 
             SqlDataReader reader = sqlCommand.ExecuteReader();
-            List<CustomerDTO> dto = new List<CustomerDTO>();
+            List<innerjoinDTO> dto = new List<innerjoinDTO>();
             while (reader.Read())
             {
-                CustomerDTO dtoItem = new CustomerDTO();
-                dtoItem.CustomerId = reader[0].ToString();
-                dtoItem.CustomerName = reader[1].ToString();
-                dtoItem.Adress = reader[2].ToString();
+                innerjoinDTO dtoItem = new innerjoinDTO();
+                dtoItem.CustomerName = reader[0].ToString();
+                dtoItem.OrderId = Convert.ToInt16(reader[1]);
+                dtoItem.ProductName = reader[2].ToString();
+                dtoItem.Quantity = Convert.ToInt16(reader[3]);
+                dtoItem.UnitPrice = Convert.ToDecimal(reader[4]);
+                dtoItem.Toplam = Convert.ToDecimal(reader[5]);
                 dto.Add(dtoItem);
             }
             sqlConnection.Close();
+            reader.Close();
             return dto;
         }
         [HttpGet]
