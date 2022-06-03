@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using System.Reflection;
 
 namespace TestAPI.Controllers
 {
@@ -17,10 +18,13 @@ namespace TestAPI.Controllers
         };
 
         private readonly ILogger<WeatherForecastController> _logger;
-
+        internal SqlConnection sqlConnection;
+        internal SqlCommand sqlCommand;
+        internal SqlDataReader reader;
         public WeatherForecastController(ILogger<WeatherForecastController> logger)
         {
             _logger = logger;
+            sqlConnection = new SqlConnection(@"data source=(localdb)\mssqllocaldb;initial catalog=Northwind;integrated security=True");
         }
 
         //[HttpGet]
@@ -39,10 +43,10 @@ namespace TestAPI.Controllers
         [ActionName("1")]
         public List<innerjoinDTO> GetCustomerAll(string customerId, int orderId)
         {
-            SqlConnection sqlConnection = new SqlConnection(@"data source=(localdb)\mssqllocaldb;initial catalog=Northwind;integrated security=True");
 
 
-            SqlCommand sqlCommand = new SqlCommand($"Select c.CompanyName, o.OrderID,p.ProductName,od.Quantity,od.UnitPrice," +
+
+            sqlCommand = new SqlCommand($"Select c.CompanyName, o.OrderID,p.ProductName,od.Quantity,od.UnitPrice," +
                 "SUM(od.Quantity*od.UnitPrice) as toplam from Orders o inner join Customers c on c.CustomerID = o.CustomerID " +
                 "inner join[Order Details] od on od.OrderID = o.OrderID " +
                 "inner join Products p on p.ProductID = od.ProductID " +
@@ -76,11 +80,7 @@ namespace TestAPI.Controllers
         [ActionName("2")]
         public List<OrderDTO> GetOrders(string CustomerId)
         {
-
-            SqlConnection sqlConnection = new SqlConnection(@"data source=(localdb)\mssqllocaldb;initial catalog=Northwind;integrated security=True");
-
-
-            SqlCommand sqlCommand = new SqlCommand($"select o.OrderID,o.OrderDate,o.ShipCountry from orders o where o.CustomerID='{CustomerId}'");
+            sqlCommand = new SqlCommand($"select o.OrderID,o.OrderDate,o.ShipCountry from orders o where o.CustomerID='{CustomerId}'");
             sqlCommand.Connection = sqlConnection;
             sqlCommand.CommandType = CommandType.Text;
             sqlConnection.Open();
@@ -96,6 +96,43 @@ namespace TestAPI.Controllers
             }
             sqlConnection.Close();
             return dto;
+        }
+        [HttpGet]
+        [ActionName("3")]
+        public List<OrderDTO> GetCustomers(string CustomerId)
+        {
+            return RunSql<OrderDTO>("Select * from Customers");
+        }
+
+        [HttpGet]
+        [ActionName("Generic")]
+        private List<T> RunSql<T>(string query) where T : class, new()
+        {
+            sqlCommand = new SqlCommand(query);
+            sqlCommand.Connection = sqlConnection;
+            sqlCommand.CommandType = CommandType.Text;
+            sqlConnection.Open();
+            reader = sqlCommand.ExecuteReader();
+            List<T> dto = new List<T>();
+            while (reader.Read())
+            {
+                T dtoItem = new T();
+                dtoItem = (T)GetPropFromClass(dtoItem);
+                dto.Add((T)dtoItem);
+
+            };
+            return dto;
+        }
+
+        private object GetPropFromClass(object Class)
+        {
+
+            Assembly asm = Assembly.GetExecutingAssembly();
+            Type t = asm.GetType("OrderDto");
+            PropertyInfo pi = t.GetProperty("Id");
+
+            return pi.GetValue(Class, null);
+
         }
     }
 }
