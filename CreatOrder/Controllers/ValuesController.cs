@@ -124,7 +124,7 @@ namespace CreatOrder.Controllers
             return dto;
         }
 
-        [HttpPost]
+        [HttpGet]
         [ActionName("CreatOrder")]
         public IActionResult CreatOrder(int employEeID, string customerId, int shipVia, string shipName)
         {
