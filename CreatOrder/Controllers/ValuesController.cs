@@ -162,7 +162,7 @@ namespace CreatOrder.Controllers
             return Ok(result);
         }
 
-        [HttpPost]
+        [HttpGet]
         [ActionName("CreatOrderDetail")]
         public int CreatOrderDetail(int orderId, int productId, decimal unitPrice, int quantity, decimal discount)
         {
