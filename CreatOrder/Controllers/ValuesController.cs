@@ -174,5 +174,18 @@ namespace CreatOrder.Controllers
             sqlConnection.Close();
             return result;
         }
+
+        [HttpPost]
+        [ActionName("CreatOrderPost")]
+        public IActionResult CreatOrderwithPost([FromBody] CreatOrder creatOrder)
+        {
+            sqlConnection.Open();
+            sqlCommand = new SqlCommand($"INSERT INTO Orders(CustomerID,EmployeeID,ShipVia,ShipName) " +
+                $"VALUES ('{creatOrder.customerId}','{creatOrder.employeeId}','{creatOrder.shipVia}','{creatOrder.shipName}')");
+            sqlCommand.Connection = sqlConnection;
+            int result = sqlCommand.ExecuteNonQuery();
+            sqlConnection.Close();
+            return Ok(creatOrder);
+        }
     }
 }
