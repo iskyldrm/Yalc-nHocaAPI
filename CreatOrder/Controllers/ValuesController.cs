@@ -125,6 +125,31 @@ namespace CreatOrder.Controllers
         }
 
         [HttpGet]
+        [ActionName("GetLastOrderId")]
+        public List<LastOrderIdDTO> GetLastOrderId(string customerId)
+        {
+            sqlCommand = new SqlCommand($"Select TOP 1 OrderID from Orders where CustomerID = '{customerId}' order by OrderID desc");
+            sqlCommand.Connection = sqlConnection;
+            sqlCommand.CommandType = CommandType.Text;
+            sqlConnection.Open();
+
+            SqlDataReader reader = sqlCommand.ExecuteReader();
+            List<LastOrderIdDTO> dto = new List<LastOrderIdDTO>();
+            while (reader.Read())
+            {
+                LastOrderIdDTO dtoItem = new LastOrderIdDTO();
+                dtoItem.orderId = Convert.ToInt16(reader[0]);
+
+                dto.Add(dtoItem);
+
+
+            }
+            reader.Close();
+            sqlConnection.Close();
+            return dto;
+        }
+
+        [HttpGet]
         [ActionName("CreatOrder")]
         public IActionResult CreatOrder(int employEeID, string customerId, int shipVia, string shipName)
         {
